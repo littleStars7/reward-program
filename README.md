@@ -1,4 +1,4 @@
-## reward-program
+## Reward-program
 This is a Spring Boot REST API that calculates customer reward points based on their transactions.
 The application provides endpoints to:
 - View all transactions
@@ -14,14 +14,14 @@ Reward points calculation:
 - Global exception handling with standardized error responses
 - Pagination support for transaction listing
 
-## tech stack
+## Tech stack
 Java 17+
 Spring Boot
 Spring Web
 Spring Data JPA
 H2 In-Memory Database
 
-## how to run the application
+## How to run the application
 1. Clone the Repository
 git clone https://github.com/your-username/rewards-api.git
 cd rewards-api
