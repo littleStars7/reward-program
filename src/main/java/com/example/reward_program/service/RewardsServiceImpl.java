@@ -2,10 +2,13 @@ package com.example.reward_program.service;
 
 import com.example.reward_program.entity.Customer;
 import com.example.reward_program.entity.Transaction;
-import com.example.reward_program.model.MonthlyRewards;
+import com.example.reward_program.dto.MonthlyRewards;
+import com.example.reward_program.exception.ResourceNotFoundException;
 import com.example.reward_program.repository.CustomerRepository;
 import com.example.reward_program.repository.TransactionRepository;
 import com.example.reward_program.util.RewardsPointsCalculator;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -17,36 +20,39 @@ import java.util.stream.Collectors;
 public class RewardsServiceImpl implements RewardsService{
     private final CustomerRepository customerRepository;
     private final TransactionRepository transactionRepository;
+    private final RewardsPointsCalculator calculator;
+
 
     public RewardsServiceImpl(CustomerRepository customerRepository,
-                              TransactionRepository transactionRepository) {
+                              TransactionRepository transactionRepository, RewardsPointsCalculator calculator) {
         this.customerRepository = customerRepository;
         this.transactionRepository = transactionRepository;
+        this.calculator = calculator;
     }
 
     @Override
-    public List<Transaction> getAllTransactions() {
-        return transactionRepository.findAll();
+    public Page<Transaction> getAllTransactions(int page, int size) {
+        return transactionRepository.findAll(PageRequest.of(page, size));
     }
 
     @Override
     public Map<String, Object> getCustomerRewards(Long customerId) {
 
-        List<Transaction> transactions = transactionRepository.findByCustomerId(customerId);
-
-        Map<String, Integer> monthlyPointsMap = new HashMap<>();
-        int totalPoints = 0;
-
-        for (Transaction t : transactions) {
-            int points = RewardsPointsCalculator.calculatePoints(t.getAmount());
-            String month = t.getTransactionDate().getMonth().toString();
-
-            monthlyPointsMap.put(month, monthlyPointsMap.getOrDefault(month, 0) + points);
-            totalPoints += points;
+        if (!customerRepository.existsById(customerId)) {
+            throw new ResourceNotFoundException("Customer not found: " + customerId);
         }
 
-        // Convert to list for UI
-        List<MonthlyRewards> monthlyRewards = monthlyPointsMap.entrySet().stream()
+        List<Transaction> transactions = transactionRepository.findByCustomerId(customerId);
+
+        Map<String, Integer> monthlyPoints = transactions.stream()
+                .collect(Collectors.groupingBy(
+                        t -> t.getTransactionDate().getMonth().toString(),
+                        Collectors.summingInt(t -> calculator.calculatePoints(t.getAmount()))
+                ));
+
+        int totalPoints = monthlyPoints.values().stream().mapToInt(Integer::intValue).sum();
+
+        List<MonthlyRewards> monthlyRewards = monthlyPoints.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .map(e -> new MonthlyRewards(e.getKey(), e.getValue()))
                 .collect(Collectors.toList());

@@ -1,4 +1,4 @@
-package com.example.reward_program.model;
+package com.example.reward_program.dto;
 
 public class MonthlyRewards {
     private String month;

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(name="customer")
 public class Customer {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
@@ -15,6 +16,9 @@ public class Customer {
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
     private List<Transaction> transactions = new ArrayList<>();
+
+    public Customer() {
+    }
 
     public Customer(String name, List<Transaction> transactions) {
         this.name = name;
